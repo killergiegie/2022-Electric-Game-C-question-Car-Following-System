@@ -26,30 +26,30 @@ void system_init(void)
     SW_Encoder_Init(); // 编码器配置
     Motor_Init();      // 电机配置
     MAP_GPIO_setAsOutputPin(GPIO_PORT_P5, GPIO_PIN5);
-    TimA3_Cap_Init(); 
+    TimA3_Cap_Init();  // 定时器配置为输入捕获模式，用于超声波模块
     TimA2_Int_Init(29999, 48); // 定时器A3中断配置,用于传感器中断 30ms
     TimA1_Int_Init(19999, 48); // 定时器A1中断配置,用于速度环中断,50Hz, 20ms
-    movement = 0.5 * 100;
+    movement = 0.5 * 100; // 实际速度0.5m/s
     movement_left  = (float)movement;
     movement_right = (float)movement;
     /* 外圈参数 */
     small_kdiff  = (int)(movement * 0.25);
     medium_kdiff = (int)(movement * 0.5);
     large_kdiff  = (int)(movement * 0.85);
-    Incremental_PID_Init(&pid_left,  100, 3, 0, 85 * 48);
+    Incremental_PID_Init(&pid_left,  100, 3, 0, 85 * 48); // 速度环PID参数配置
     Incremental_PID_Init(&pid_right, 100, 3, 0, 85 * 48); 
 
     /*中断优先级管理，切记定时器中断优先级不能高于外部中断优先级*/
-    //编码器采集中断优先级，设置为最低
+    //编码器采集中断优先级，设置为次低
     Interrupt_setPriority(INT_PORT2, 3 << 5);
     Interrupt_setPriority(INT_PORT4, 3 << 5);
     Interrupt_setPriority(INT_PORT5, 3 << 5);
     Interrupt_setPriority(INT_PORT6, 3 << 5);
 
-    //速度环中断优先级，设置为次高
+    //速度环中断优先级，设置为最高
     Interrupt_setPriority(INT_TA1_0, 2 << 5);
 
-    // 通信中断优先级，设置为最高
+    // 通信中断优先级，设置为最低
     Interrupt_setPriority(INT_EUSCIA0, 4 << 5);
 
     /*清除中断标志位*/
@@ -100,13 +100,13 @@ int main(void)
         //}
 
         LED_B_Tog();
-        if(motor_flag == 1)
+        if(motor_flag == 1) // 电机启动后，绿灯闪烁
         {
             LED_G_Tog();
         }
         key_flag = KEY_Scan(0);
         send_flag = 0x09 + task; // 发送任务状态指令
-        if (key_flag == 1)
+        if (key_flag == 1) // 按键切换任务
         {
             task++;
             if (task > 4)
@@ -114,7 +114,7 @@ int main(void)
                 task = 1;
             }
         }
-        else if (key_flag == 2)
+        else if (key_flag == 2) // 按键控制发车
         {
             motor_flag++;
             send_flag = 1; // 发送启动指令
@@ -123,7 +123,7 @@ int main(void)
                 motor_flag = 0;
             }
         }
-        if(beep_flag == 1)
+        if(beep_flag == 1) // 蜂鸣器控制
             BEEP_On();
         else if(beep_flag == 0)
             BEEP_Off();
@@ -142,26 +142,26 @@ void TA1_0_IRQHandler(void)
     MAP_Timer_A_clearCaptureCompareInterrupt(TIMER_A1_BASE, TIMER_A_CAPTURECOMPARE_REGISTER_0);
 
     /*开始填充用户代码*/
-    SW_Encoder_Read();
-    speed_left = encoder_to_speed(encoder_left);
+    SW_Encoder_Read(); // 软件获取编码器数据
+    speed_left = encoder_to_speed(encoder_left); // 换算为实际速度
     speed_right = encoder_to_speed(encoder_right);
-    if(road_flag == 1)
+    if(road_flag == 1) // 路程计算标志位被置1后开始计算路程（实际值）
     {
         road += 2 * (speed_left + speed_right) / (float)2.0;
     }
-    else if(road_flag == 0)
+    else if(road_flag == 0) // 复位后路程清零
     {
         road = 0;
     }
 
-    if (motor_flag == 1)
+    if (motor_flag == 1) // 电机标志位开启后才计算PID
     {
         Motor_PID();
     }
-    else if(motor_flag == 0)
+    else if(motor_flag == 0) 
     {
         Motor_Set(0, 0);
-        pid_left.output = 0;
+        pid_left.output = 0; // 清空增量PID的输出
         pid_right.output = 0;
     }
     /*结束填充用户代码*/
@@ -174,7 +174,7 @@ void TA1_0_IRQHandler(void)
 void TA2_0_IRQHandler(void)
 {
     MAP_Timer_A_clearCaptureCompareInterrupt(TIMER_A2_BASE, TIMER_A_CAPTURECOMPARE_REGISTER_0);
-    if(wait_flag == 1)
+    if(wait_flag == 1) // 计时与计时清零，用于5s等停
     {
         wait_time++;
     }
@@ -184,9 +184,9 @@ void TA2_0_IRQHandler(void)
     }
     Grayscale_scan();
     // Grayscale_Judge();
-    FSM();
-    ult_start();
-    if((task == 3) && (lap == 2))
+    FSM(); // 状态机
+    ult_start(); // 超声波测距
+    if((task == 3) && (lap == 2)) // 防撞设计
     {
         if (ult_distance < 20)
         {
@@ -201,7 +201,7 @@ void TA2_0_IRQHandler(void)
             movement = 0.5 * 100;
         }
     }
-    if(last_send_flag != send_flag)
+    if(last_send_flag != send_flag) // 通信，只发送三次数据
     {
         for (int i = 0; i < 3; i++)
         {

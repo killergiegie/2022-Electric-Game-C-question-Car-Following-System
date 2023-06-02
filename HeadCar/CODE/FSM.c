@@ -8,7 +8,7 @@ void FSM(void)
 {
     switch(state)
     {
-    case NONE:
+    case NONE: // 初始状态，此时会判断停止线
         Grayscale_Judge();
         if ((a && C && D && F && h) || (a && b && c && F && G && H) || (A && B && C && f && g && h) || (gray_state >= 4)) // 停止线
         {
@@ -74,8 +74,8 @@ void FSM(void)
             default:
                 break;
             }
-            state = CROSS;
-            stateCROSS = PRE_CROSS;
+            state = CROSS; // 进入岔路口状态
+            stateCROSS = PRE_CROSS; // 子状态为预入岔
             LED_RED_Tog();
         }
         break;
@@ -111,11 +111,11 @@ void FSM(void)
             {
                 if (cross_flag == 1) // 走外圈
                 {
-                    Outer_Ring();
+                    Outer_Ring(); // 外圈循迹
                 }
                 else if (cross_flag == 0) // 走内圈
                 {
-                    Inner_Ring();
+                    Inner_Ring(); // 内圈循迹
                 }
             }
             else if(road < 450)
