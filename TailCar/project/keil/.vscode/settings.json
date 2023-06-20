@@ -1,0 +1,21 @@
+{
+    "files.associations": {
+        "pid.h": "c",
+        "isr.h": "c",
+        "sysinit.h": "c",
+        "encdec.h": "c",
+        "encoder.h": "c",
+        "motor.h": "c",
+        "globalvar.h": "c",
+        "driverlib.h": "c",
+        "tima.h": "c",
+        "led.h": "c",
+        "grayscale.h": "c",
+        "fsm.h": "c",
+        "bluetooth.h": "c",
+        "baudrate_calculate.h": "c",
+        "usart.h": "c",
+        "stdio.h": "c",
+        "*.rh": "c"
+    }
+}
